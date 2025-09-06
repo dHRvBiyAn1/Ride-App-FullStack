@@ -1,0 +1,68 @@
+<header class="header">
+  <div class="header-content">
+    <!-- Left Section - Title -->
+    <div class="header-left">
+      <h1 class="header-title">
+        <span class="brand-icon">🚗</span>
+        Ride App
+      </h1>
+    </div>
+
+    <!-- Right Section - User Menu -->
+    <div class="header-right">
+      <div class="user-menu" (clickOutside)="closeUserMenu()">
+        <button class="user-menu-trigger" (click)="toggleUserMenu()">
+          <div class="user-avatar">
+            {{ getInitials() }}
+          </div>
+          <div class="user-info">
+            <div class="user-name">{{ currentUser?.name }}</div>
+            <div class="user-role">{{ getRoleDisplayName() }}</div>
+          </div>
+          <div class="user-menu-icon" [class.rotated]="showUserMenu">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m6 9 6 6 6-6"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div class="user-dropdown" [class.show]="showUserMenu">
+          <div class="user-dropdown-header">
+            <div class="user-avatar-large">
+              {{ getInitials() }}
+            </div>
+            <div class="user-details">
+              <div class="user-name-large">{{ currentUser?.name }}</div>
+              <div class="user-email">{{ currentUser?.email }}</div>
+              <div class="user-role-badge" [class.admin]="isAdmin()">
+                {{ getRoleDisplayName() }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="user-dropdown-divider"></div>
+          
+          <div class="user-dropdown-menu">
+            <button class="menu-item" (click)="navigateToProfile()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span>Profile Settings</span>
+            </button>
+            
+            <button class="menu-item logout" (click)="logout()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

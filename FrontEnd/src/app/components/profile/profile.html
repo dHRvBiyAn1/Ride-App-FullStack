@@ -1,0 +1,856 @@
+<div class="profile-container">
+  <!-- Header -->
+  <div class="profile-header">
+    <div class="header-content">
+      <h1 class="page-title">My Profile</h1>
+      <p class="page-subtitle">Manage your account settings and preferences</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" (click)="downloadUserData()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7,10 12,15 17,10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export Data
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="logout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16,17 21,12 16,7"/>
+          <path d="M21 12H9"/>
+        </svg>
+        Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <app-loading size="lg" message="Loading profile..."></app-loading>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="!isLoading && currentUser" class="profile-content">
+    <!-- Profile Overview Card -->
+    <div class="profile-overview">
+      <div class="profile-card">
+        <div class="profile-avatar-section">
+          <div class="profile-avatar" (click)="openProfilePictureModal()">
+            <img 
+              *ngIf="currentUser.profilePicture" 
+              [src]="currentUser.profilePicture" 
+              [alt]="currentUser.name">
+            <span *ngIf="!currentUser.profilePicture" class="avatar-initials">
+              {{ getInitials() }}
+            </span>
+            <div class="avatar-overlay">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+          </div>
+          <button 
+            *ngIf="currentUser.profilePicture" 
+            class="btn btn-sm btn-outline remove-picture-btn"
+            (click)="removeProfilePicture()">
+            Remove Photo
+          </button>
+        </div>
+        
+        <div class="profile-info">
+          <h2 class="profile-name">{{ currentUser.name }}</h2>
+          <p class="profile-email">{{ currentUser.email }}</p>
+          <div class="profile-badges">
+            <span class="badge role-badge" [class]="'badge-' + currentUser.role.toLowerCase()">
+              {{ currentUser.role | titlecase }}
+            </span>
+            <span class="badge status-badge" [class]="'badge-' + currentUser.status.toLowerCase()">
+              {{ currentUser.status | titlecase }}
+            </span>
+          </div>
+          <p class="profile-member-since">Member since {{ profileStats.memberSince }}</p>
+        </div>
+        
+        <div class="profile-actions">
+          <button class="btn btn-primary" (click)="openEditProfileModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit Profile
+          </button>
+        </div>
+      </div>
+      
+      <!-- Profile Stats -->
+      <div class="profile-stats">
+        <div class="stat-item">
+          <div class="stat-icon">🚗</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ profileStats.totalRides }}</div>
+            <div class="stat-label">Total Rides</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-icon">💰</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ formatCurrency(profileStats.totalSpent) }}</div>
+            <div class="stat-label">Total Spent</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ profileStats.averageRating }}</div>
+            <div class="stat-label">Avg Rating</div>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-icon">📍</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ profileStats.savedAddresses }}</div>
+            <div class="stat-label">Saved Places</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="profile-tabs">
+      <div class="tabs-nav">
+        <button 
+          class="tab-btn"
+          [class.active]="activeTab === 'profile'"
+          (click)="setActiveTab('profile')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Profile
+        </button>
+        
+        <button 
+          class="tab-btn"
+          [class.active]="activeTab === 'security'"
+          (click)="setActiveTab('security')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Security
+        </button>
+        
+        <button 
+          class="tab-btn"
+          [class.active]="activeTab === 'notifications'"
+          (click)="setActiveTab('notifications')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          Notifications
+        </button>
+        
+        <button 
+          class="tab-btn"
+          [class.active]="activeTab === 'privacy'"
+          (click)="setActiveTab('privacy')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+          </svg>
+          Privacy
+        </button>
+        
+        <button 
+          class="tab-btn"
+          [class.active]="activeTab === 'activity'"
+          (click)="setActiveTab('activity')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+          </svg>
+          Activity
+        </button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div class="tab-content">
+        
+        <!-- Profile Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'profile'">
+          <div class="profile-details-section">
+            <h3 class="section-title">Personal Information</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <label class="detail-label">Full Name</label>
+                <div class="detail-value">{{ currentUser.name || 'Not specified' }}</div>
+              </div>
+              
+              <div class="detail-item">
+                <label class="detail-label">Email Address</label>
+                <div class="detail-value">{{ currentUser.email }}</div>
+              </div>
+              
+              <div class="detail-item">
+                <label class="detail-label">Date of Birth</label>
+                <div class="detail-value">
+                  {{ currentUser.dateOfBirth ? formatDate(currentUser.dateOfBirth) : 'Not specified' }}
+                </div>
+              </div>
+              
+              <div class="detail-item">
+                <label class="detail-label">Gender</label>
+                <div class="detail-value">{{ currentUser.gender || 'Not specified' }}</div>
+              </div>
+              
+              <div class="detail-item">
+                <label class="detail-label">Address</label>
+                <div class="detail-value">{{ currentUser.address || 'Not specified' }}</div>
+              </div>
+            </div>
+            
+            <div class="detail-item bio-item" *ngIf="currentUser.bio">
+              <label class="detail-label">Bio</label>
+              <div class="detail-value bio-text">{{ currentUser.bio }}</div>
+            </div>
+            
+            <div class="section-actions">
+              <button class="btn btn-primary" (click)="openEditProfileModal()">
+                Edit Information
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'security'">
+          <div class="security-section">
+            <h3 class="section-title">Account Security</h3>
+            
+            <div class="security-items">
+              <div class="security-item">
+                <div class="security-item-content">
+                  <div class="security-item-info">
+                    <div class="security-item-title">Password</div>
+                    <div class="security-item-description">
+                      Last changed {{ getTimeAgo(getLastChangedDate()) }}
+                    </div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" (click)="openChangePasswordModal()">
+                    Change Password
+                  </button>
+                </div>
+              </div>
+              
+              <div class="security-item">
+                <div class="security-item-content">
+                  <div class="security-item-info">
+                    <div class="security-item-title">Two-Factor Authentication</div>
+                    <div class="security-item-description">
+                      Add an extra layer of security to your account
+                    </div>
+                  </div>
+                  <button class="btn btn-outline btn-sm" (click)="enableTwoFactor()">
+                    Enable 2FA
+                  </button>
+                </div>
+              </div>
+              
+              <div class="security-item">
+                <div class="security-item-content">
+                  <div class="security-item-info">
+                    <div class="security-item-title">Active Sessions</div>
+                    <div class="security-item-description">
+                      Manage devices that are signed into your account
+                    </div>
+                  </div>
+                  <button class="btn btn-outline btn-sm">
+                    Manage Sessions
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="danger-zone">
+              <h4 class="danger-title">Danger Zone</h4>
+              <div class="security-item danger-item">
+                <div class="security-item-content">
+                  <div class="security-item-info">
+                    <div class="security-item-title">Delete Account</div>
+                    <div class="security-item-description">
+                      Permanently delete your account and all associated data
+                    </div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" (click)="openDeleteAccountModal()">
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'notifications'">
+          <div class="notifications-section">
+            <h3 class="section-title">Notification Preferences</h3>
+            <p class="section-description">Choose how you'd like to be notified about updates</p>
+            
+            <form [formGroup]="notificationForm" class="settings-form">
+              <div class="settings-group">
+                <h4 class="settings-group-title">General Notifications</h4>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Email Notifications</div>
+                      <div class="setting-description">Receive notifications via email</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="emailNotifications">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Push Notifications</div>
+                      <div class="setting-description">Receive push notifications on your device</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="pushNotifications">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">SMS Notifications</div>
+                      <div class="setting-description">Receive notifications via text message</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="smsNotifications">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="settings-group">
+                <h4 class="settings-group-title">Ride & Payment Notifications</h4>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Ride Updates</div>
+                      <div class="setting-description">Get notified about ride status changes</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="rideUpdates">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Payment Notifications</div>
+                      <div class="setting-description">Notifications about payments and receipts</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="paymentNotifications">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Security Alerts</div>
+                      <div class="setting-description">Important security and account notifications</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="securityAlerts">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="settings-group">
+                <h4 class="settings-group-title">Marketing</h4>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Promotional Emails</div>
+                      <div class="setting-description">Receive offers, promotions, and updates</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="promotionalEmails">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="section-actions">
+                <button 
+                  type="button" 
+                  class="btn btn-primary"
+                  [disabled]="isSavingSettings"
+                  (click)="saveNotificationSettings()">
+                  <app-loading *ngIf="isSavingSettings" size="sm" color="white"></app-loading>
+                  <span *ngIf="!isSavingSettings">Save Preferences</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Privacy Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'privacy'">
+          <div class="privacy-section">
+            <h3 class="section-title">Privacy Settings</h3>
+            <p class="section-description">Control how your data is used and shared</p>
+            
+            <form [formGroup]="privacyForm" class="settings-form">
+              <div class="settings-group">
+                <h4 class="settings-group-title">Data Sharing</h4>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Share Location History</div>
+                      <div class="setting-description">Allow sharing of anonymized location data for service improvement</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="shareLocationHistory">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Share Ride History</div>
+                      <div class="setting-description">Share ride patterns for analytics and improvements</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="shareRideHistory">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Allow Data Collection</div>
+                      <div class="setting-description">Help improve our service by sharing usage data</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="allowDataCollection">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="settings-group">
+                <h4 class="settings-group-title">Profile Visibility</h4>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Share Profile with Drivers</div>
+                      <div class="setting-description">Allow drivers to see your name and rating</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="shareProfileWithDrivers">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="setting-item">
+                  <div class="setting-content">
+                    <div class="setting-info">
+                      <div class="setting-title">Enable Location Tracking</div>
+                      <div class="setting-description">Allow real-time location tracking during rides</div>
+                    </div>
+                    <div class="setting-control">
+                      <label class="toggle-switch">
+                        <input type="checkbox" formControlName="enableLocationTracking">
+                        <span class="toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="section-actions">
+                <button 
+                  type="button" 
+                  class="btn btn-primary"
+                  [disabled]="isSavingSettings"
+                  (click)="savePrivacySettings()">
+                  <app-loading *ngIf="isSavingSettings" size="sm" color="white"></app-loading>
+                  <span *ngIf="!isSavingSettings">Save Settings</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Activity Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'activity'">
+          <div class="activity-section">
+            <h3 class="section-title">Account Activity</h3>
+            <p class="section-description">Recent activity on your account</p>
+            
+            <div class="activity-list">
+              <div class="activity-item" *ngFor="let activity of recentActivity">
+                <div class="activity-icon">
+                  <div class="activity-dot"></div>
+                </div>
+                <div class="activity-content">
+                  <div class="activity-header">
+                    <div class="activity-title">{{ activity.action }}</div>
+                    <div class="activity-time">{{ getTimeAgo(activity.timestamp) }}</div>
+                  </div>
+                  <div class="activity-description">{{ activity.description }}</div>
+                  <div class="activity-meta">
+                    <span class="activity-device">{{ activity.device }}</span>
+                    <span class="activity-separator">•</span>
+                    <span class="activity-ip">{{ activity.ipAddress }}</span>
+                    <span class="activity-separator">•</span>
+                    <span class="activity-date">{{ formatDateTime(activity.timestamp) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="activity-actions">
+              <button class="btn btn-outline">
+                View All Activity
+              </button>
+              <button class="btn btn-outline" (click)="downloadUserData()">
+                Export Activity Log
+              </button>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<app-modal 
+  [isOpen]="showEditProfileModal"
+  [title]="'Edit Profile'"
+  [confirmText]="'Save Changes'"
+  [cancelText]="'Cancel'"
+  [size]="'lg'"
+  [loading]="isUpdatingProfile"
+  (close)="closeEditProfileModal()"
+  (confirm)="updateProfile()"
+  (cancel)="closeEditProfileModal()">
+  
+  <form [formGroup]="profileForm" class="modal-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input
+          type="text"
+          formControlName="name"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(profileForm, 'name')"
+          placeholder="Enter your full name">
+        <div class="form-error" *ngIf="isFieldInvalid(profileForm, 'name')">
+          {{ getFieldError(profileForm, 'name') }}
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input
+          type="email"
+          formControlName="email"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(profileForm, 'email')"
+          placeholder="Enter your email">
+        <div class="form-error" *ngIf="isFieldInvalid(profileForm, 'email')">
+          {{ getFieldError(profileForm, 'email') }}
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input
+          type="tel"
+          formControlName="phone"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(profileForm, 'phone')"
+          placeholder="Enter your phone number">
+        <div class="form-error" *ngIf="isFieldInvalid(profileForm, 'phone')">
+          {{ getFieldError(profileForm, 'phone') }}
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Date of Birth</label>
+        <input
+          type="date"
+          formControlName="dateOfBirth"
+          class="form-control">
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select formControlName="gender" class="form-control form-select">
+          <option value="">Select gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+          <option value="prefer-not-to-say">Prefer not to say</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input
+          type="text"
+          formControlName="address"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(profileForm, 'address')"
+          placeholder="Enter your address">
+        <div class="form-error" *ngIf="isFieldInvalid(profileForm, 'address')">
+          {{ getFieldError(profileForm, 'address') }}
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Bio</label>
+      <textarea
+        formControlName="bio"
+        class="form-control"
+        [class.is-invalid]="isFieldInvalid(profileForm, 'bio')"
+        rows="3"
+        placeholder="Tell us about yourself..."></textarea>
+      <div class="form-error" *ngIf="isFieldInvalid(profileForm, 'bio')">
+        {{ getFieldError(profileForm, 'bio') }}
+      </div>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Change Password Modal -->
+<app-modal 
+  [isOpen]="showChangePasswordModal"
+  [title]="'Change Password'"
+  [confirmText]="'Change Password'"
+  [cancelText]="'Cancel'"
+  [loading]="isChangingPassword"
+  (close)="closeChangePasswordModal()"
+  (confirm)="changePassword()"
+  (cancel)="closeChangePasswordModal()">
+  
+  <form [formGroup]="passwordForm" class="modal-form">
+    <div class="form-group">
+      <label class="form-label">Current Password</label>
+      <input
+        type="password"
+        formControlName="currentPassword"
+        class="form-control"
+        [class.is-invalid]="isFieldInvalid(passwordForm, 'currentPassword')"
+        placeholder="Enter current password">
+      <div class="form-error" *ngIf="isFieldInvalid(passwordForm, 'currentPassword')">
+        {{ getFieldError(passwordForm, 'currentPassword') }}
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">New Password</label>
+      <input
+        type="password"
+        formControlName="newPassword"
+        class="form-control"
+        [class.is-invalid]="isFieldInvalid(passwordForm, 'newPassword')"
+        placeholder="Enter new password">
+      <div class="form-error" *ngIf="isFieldInvalid(passwordForm, 'newPassword')">
+        {{ getFieldError(passwordForm, 'newPassword') }}
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Confirm New Password</label>
+      <input
+        type="password"
+        formControlName="confirmPassword"
+        class="form-control"
+        [class.is-invalid]="isFieldInvalid(passwordForm, 'confirmPassword')"
+        placeholder="Confirm new password">
+      <div class="form-error" *ngIf="isFieldInvalid(passwordForm, 'confirmPassword')">
+        {{ getFieldError(passwordForm, 'confirmPassword') }}
+      </div>
+    </div>
+    
+    <div class="password-requirements">
+      <h5>Password Requirements:</h5>
+      <ul>
+        <li>At least 6 characters long</li>
+        <li>Contains uppercase and lowercase letters</li>
+        <li>Contains at least one number</li>
+      </ul>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Profile Picture Modal -->
+<app-modal 
+  [isOpen]="showProfilePictureModal"
+  [title]="'Update Profile Picture'"
+  [confirmText]="'Upload'"
+  [cancelText]="'Cancel'"
+  [loading]="isUploadingPicture"
+  [confirmDisabled]="!selectedProfilePicture"
+  (close)="closeProfilePictureModal()"
+  (confirm)="uploadProfilePicture()"
+  (cancel)="closeProfilePictureModal()">
+  
+  <div class="profile-picture-upload">
+    <div class="upload-area" [class.has-file]="profilePicturePreview">
+      <div class="current-preview" *ngIf="profilePicturePreview">
+        <img [src]="profilePicturePreview" alt="Profile picture preview">
+      </div>
+      
+      <div class="upload-placeholder" *ngIf="!profilePicturePreview">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <h4>Choose a Profile Picture</h4>
+        <p>Upload a photo to personalize your account</p>
+      </div>
+      
+      <input 
+        type="file" 
+        #fileInput 
+        accept="image/*" 
+        (change)="onProfilePictureSelected($event)" 
+        style="display: none;">
+      
+      <button 
+        type="button" 
+        class="btn btn-outline upload-btn"
+        (click)="fileInput.click()">
+        {{ profilePicturePreview ? 'Change Photo' : 'Select Photo' }}
+      </button>
+    </div>
+    
+    <div class="upload-guidelines">
+      <h5>Guidelines:</h5>
+      <ul>
+        <li>Use a high-quality image</li>
+        <li>Square images work best</li>
+        <li>Maximum file size: 5MB</li>
+        <li>Supported formats: JPG, PNG, GIF</li>
+      </ul>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Delete Account Modal -->
+<app-modal 
+  [isOpen]="showDeleteAccountModal"
+  [title]="'Delete Account'"
+  [confirmText]="'Delete My Account'"
+  [cancelText]="'Cancel'"
+  [confirmButtonClass]="'btn-danger'"
+  [loading]="isDeletingAccount"
+  (close)="closeDeleteAccountModal()"
+  (confirm)="deleteAccount()"
+  (cancel)="closeDeleteAccountModal()">
+  
+  <div class="delete-account-content">
+    <div class="warning-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    
+    <h3 class="warning-title">Are you sure you want to delete your account?</h3>
+    
+    <div class="warning-text">
+      <p>This action cannot be undone. Deleting your account will:</p>
+      <ul>
+        <li>Permanently remove all your personal data</li>
+        <li>Delete your ride history and payments</li>
+        <li>Remove all saved addresses and preferences</li>
+        <li>Cancel any active subscriptions</li>
+      </ul>
+      <p><strong>This action is irreversible.</strong></p>
+    </div>
+    
+    <div class="account-summary">
+      <h4>Account Summary:</h4>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="stat-label">Total Rides:</span>
+          <span class="stat-value">{{ profileStats.totalRides }}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="stat-label">Total Spent:</span>
+          <span class="stat-value">{{ formatCurrency(profileStats.totalSpent) }}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="stat-label">Member Since:</span>
+          <span class="stat-value">{{ profileStats.memberSince }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-modal>

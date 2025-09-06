@@ -1,0 +1,239 @@
+.header {
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  height: 4rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--primary-600);
+  margin: 0;
+}
+
+.brand-icon {
+  font-size: var(--font-3xl);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* User Menu */
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.user-menu-trigger:hover {
+  background-color: var(--gray-50);
+}
+
+.user-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: var(--font-sm);
+  color: var(--gray-900);
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: var(--font-xs);
+  color: var(--gray-500);
+  line-height: 1.2;
+}
+
+.user-menu-icon {
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+}
+
+.user-menu-icon.rotated {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  width: 280px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.5rem);
+  transition: all 0.2s ease;
+  z-index: 50;
+}
+
+.user-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-dropdown-header {
+  padding: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.user-avatar-large {
+  width: 3rem;
+  height: 3rem;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--font-base);
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name-large {
+  font-weight: 600;
+  font-size: var(--font-base);
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+}
+
+.user-email {
+  font-size: var(--font-sm);
+  color: var(--gray-500);
+  margin-bottom: var(--space-2);
+}
+
+.user-role-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--primary-100);
+  color: var(--primary-600);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+}
+
+.user-role-badge.admin {
+  background-color: var(--warning-100);
+  color: var(--warning-600);
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background-color: var(--gray-200);
+}
+
+.user-dropdown-menu {
+  padding: var(--space-2);
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--font-sm);
+  color: var(--gray-700);
+  transition: background-color 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: var(--gray-50);
+}
+
+.menu-item.logout {
+  color: var(--error-600);
+}
+
+.menu-item.logout:hover {
+  background-color: var(--error-50);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 var(--space-4);
+  }
+  
+  .header-title {
+    font-size: var(--font-xl);
+  }
+  
+  .brand-icon {
+    font-size: var(--font-2xl);
+  }
+  
+  .user-info {
+    display: none;
+  }
+  
+  .user-dropdown {
+    width: 260px;
+    right: var(--space-4);
+  }
+}

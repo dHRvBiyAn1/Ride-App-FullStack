@@ -1,0 +1,65 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+  <!-- Sidebar Header -->
+  <div class="sidebar-header">
+    <div class="sidebar-brand" *ngIf="!isCollapsed">
+      <span class="brand-icon">🚗</span>
+      <span class="brand-text">Ride App</span>
+    </div>
+    <button class="sidebar-toggle" (click)="toggleSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- User Info -->
+  <div class="sidebar-user" *ngIf="currentUser">
+    <div class="user-avatar">
+      {{ getTimeAgo(getLastChangedDate()) }}
+    </div>
+    <div class="user-info" *ngIf="!isCollapsed">
+      <div class="user-name">{{ currentUser.name }}</div>
+      <div class="user-role">
+        {{ isAdmin() ? 'Administrator' : 'Customer' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Menu -->
+  <nav class="sidebar-nav">
+    <ul class="nav-menu">
+      <li 
+        *ngFor="let item of getMenuItems()" 
+        class="nav-item"
+        [class.active]="isActiveRoute(item.route)">
+        <button 
+          class="nav-link"
+          (click)="navigate(item.route)"
+          [title]="isCollapsed ? item.label : ''">
+          <div class="nav-icon" [innerHTML]="getIconSvg(item.icon)"></div>
+          <span class="nav-label" *ngIf="!isCollapsed">{{ item.label }}</span>
+          <span 
+            class="nav-badge" 
+            *ngIf="item.badge && !isCollapsed"
+            [style.backgroundColor]="item.badgeColor">
+            {{ item.badge }}
+          </span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Sidebar Footer -->
+  <div class="sidebar-footer" *ngIf="!isCollapsed">
+    <div class="footer-content">
+      <div class="app-version">Version 1.0.0</div>
+      <div class="footer-links">
+        <a href="#" class="footer-link">Help</a>
+        <span class="footer-divider">•</span>
+        <a href="#" class="footer-link">Support</a>
+      </div>
+    </div>
+  </div>
+</aside>

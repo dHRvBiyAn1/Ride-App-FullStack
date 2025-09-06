@@ -1,0 +1,324 @@
+<div class="admin-dashboard-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <app-loading size="lg" message="Loading admin dashboard..."></app-loading>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading" class="dashboard-content">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+      <div class="welcome-section">
+        <h1 class="dashboard-title">
+          Admin Dashboard 📊
+        </h1>
+        <p class="dashboard-subtitle">
+          Monitor and manage your ride-sharing platform
+        </p>
+      </div>
+      <div class="header-stats">
+        <div class="header-stat">
+          <div class="header-stat-value">{{ formatNumber(stats.totalUsers + stats.totalDrivers) }}</div>
+          <div class="header-stat-label">Total Users</div>
+        </div>
+        <div class="header-stat">
+          <div class="header-stat-value">{{ formatNumber(stats.totalRides) }}</div>
+          <div class="header-stat-label">Total Rides</div>
+        </div>
+        <div class="header-stat">
+          <div class="header-stat-value">{{ formatCurrency(stats.totalRevenue) }}</div>
+          <div class="header-stat-label">Total Revenue</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="system-health">
+      <div class="health-header">
+        <h3 class="health-title">System Health</h3>
+        <div class="health-status all-healthy">All Systems Operational</div>
+      </div>
+      <div class="health-services">
+        <div class="health-service" *ngFor="let service of [
+          {name: 'Users', status: systemHealth.usersService, count: stats.totalUsers},
+          {name: 'Drivers', status: systemHealth.driversService, count: stats.totalDrivers},
+          {name: 'Rides', status: systemHealth.ridesService, count: stats.totalRides},
+          {name: 'Payments', status: systemHealth.paymentsService, count: stats.totalRevenue}
+        ]">
+          <div class="service-status" [class.healthy]="service.status === 'healthy'">
+            <div class="status-dot"></div>
+          </div>
+          <div class="service-info">
+            <div class="service-name">{{ service.name }}</div>
+            <div class="service-count">{{ service.name === 'Payments' ? formatCurrency(service.count) : formatNumber(service.count) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Stats Grid -->
+    <div class="stats-grid">
+      <!-- Users Stats -->
+      <div class="stat-card stat-card-users">
+        <div class="stat-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatNumber(stats.totalUsers) }}</div>
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-meta">
+            <span class="stat-active">{{ stats.activeUsers }} active</span>
+            <span class="stat-percentage">{{ getGrowthPercentage(stats.activeUsers, stats.totalUsers) }}%</span>
+          </div>
+        </div>
+        <button class="stat-action" (click)="navigateToUsers()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 17L17 7"/>
+            <path d="M7 7h10v10"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Drivers Stats -->
+      <div class="stat-card stat-card-drivers">
+        <div class="stat-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.293-.707L19 9.414a1 1 0 0 0-.707-.293H15.5L14 7H9L7.5 9.121H5.207a1 1 0 0 0-.707.293L2 12.121V16h3"/>
+            <circle cx="6.5" cy="16" r="2.5"/>
+            <circle cx="16.5" cy="16" r="2.5"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatNumber(stats.totalDrivers) }}</div>
+          <div class="stat-label">Total Drivers</div>
+          <div class="stat-meta">
+            <span class="stat-active">{{ stats.activeDrivers }} online</span>
+            <span class="stat-percentage">{{ getGrowthPercentage(stats.activeDrivers, stats.totalDrivers) }}%</span>
+          </div>
+        </div>
+        <button class="stat-action" (click)="navigateToDrivers()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 17L17 7"/>
+            <path d="M7 7h10v10"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Rides Stats -->
+      <div class="stat-card stat-card-rides">
+        <div class="stat-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27,6.96 12,12.01 20.73,6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatNumber(stats.totalRides) }}</div>
+          <div class="stat-label">Total Rides</div>
+          <div class="stat-meta">
+            <span class="stat-active">{{ stats.activeRides }} active</span>
+            <span class="stat-percentage">{{ getGrowthPercentage(stats.completedRides, stats.totalRides) }}%</span>
+          </div>
+        </div>
+        <button class="stat-action" (click)="navigateToRides()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 17L17 7"/>
+            <path d="M7 7h10v10"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Revenue Stats -->
+      <div class="stat-card stat-card-revenue">
+        <div class="stat-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatCurrency(stats.monthlyRevenue) }}</div>
+          <div class="stat-label">Monthly Revenue</div>
+          <div class="stat-meta">
+            <span class="stat-active">{{ formatCurrency(stats.averageRideValue) }} avg</span>
+            <span class="stat-percentage">+12%</span>
+          </div>
+        </div>
+        <button class="stat-action">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 17L17 7"/>
+            <path d="M7 7h10v10"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+      <!-- Recent Activities -->
+      <div class="content-section activities-section">
+        <div class="section-header">
+          <h3 class="section-title">Recent Activities</h3>
+          <div class="section-actions">
+            <button class="btn btn-sm btn-outline">View All</button>
+          </div>
+        </div>
+        
+        <div class="activities-list">
+          <div 
+            class="activity-item"
+            *ngFor="let activity of recentActivities; trackBy: trackByActivityId">
+            <div class="activity-icon">
+              {{ getActivityIcon(activity.type) }}
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">{{ activity.title }}</div>
+              <div class="activity-description">{{ activity.description }}</div>
+              <div class="activity-time">{{ getTimeAgo(activity.timestamp) }}</div>
+            </div>
+            <div class="activity-meta">
+              <div class="activity-status" 
+                   [style.color]="getStatusColor(activity.status || '')"
+                   *ngIf="activity.status">
+                {{ activity.status | titlecase }}
+              </div>
+              <div class="activity-amount" *ngIf="activity.amount">
+                {{ formatCurrency(activity.amount) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Drivers -->
+      <div class="content-section drivers-section">
+        <div class="section-header">
+          <h3 class="section-title">Top Rated Drivers</h3>
+          <div class="section-actions">
+            <button class="btn btn-sm btn-outline" (click)="navigateToDrivers()">View All</button>
+          </div>
+        </div>
+        
+        <div class="drivers-list">
+          <div 
+            class="driver-item"
+            *ngFor="let driver of topDrivers; let i = index">
+            <div class="driver-rank">
+              <span class="rank-number">{{ i + 1 }}</span>
+            </div>
+            <div class="driver-avatar">
+              {{ driver.name.charAt(0).toUpperCase() }}
+            </div>
+            <div class="driver-info">
+              <div class="driver-name">{{ driver.name }}</div>
+              <div class="driver-stats">
+                <span class="driver-rides">{{ driver.totalRides || 0 }} rides</span>
+                <span class="driver-rating">
+                  ⭐ {{ driver.rating.toFixed(1) || 'N/A' }}
+                </span>
+              </div>
+            </div>
+            <div class="driver-status" [style.color]="getStatusColor(driver.status)">
+              {{ driver.status | titlecase }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Users -->
+      <div class="content-section users-section">
+        <div class="section-header">
+          <h3 class="section-title">New Customers</h3>
+          <div class="section-actions">
+            <button class="btn btn-sm btn-outline" (click)="navigateToUsers()">View All</button>
+          </div>
+        </div>
+        
+        <div class="users-list">
+          <div 
+            class="user-item"
+            *ngFor="let user of recentUsers">
+            <div class="user-avatar">
+              {{ user.name.charAt(0).toUpperCase() }}
+            </div>
+            <div class="user-info">
+              <div class="user-name">{{ user.name }}</div>
+              <div class="user-email">{{ user.email }}</div>
+              <div class="user-joined">Joined {{ getTimeAgo(getUserJoinedDate(user)) }}</div>
+            </div>
+            <div class="user-status" [style.color]="getStatusColor(user.status)">
+              {{ user.status | titlecase }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-section">
+      <div class="section-header">
+        <h3 class="section-title">Quick Actions</h3>
+      </div>
+      <div class="quick-actions-grid">
+        <button class="quick-action-card" (click)="navigateToUsers()">
+          <div class="action-icon action-icon-users">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" y1="8" x2="20" y2="14"/>
+              <line x1="23" y1="11" x2="17" y2="11"/>
+            </svg>
+          </div>
+          <div class="action-content">
+            <div class="action-title">Add User</div>
+            <div class="action-description">Create new customer account</div>
+          </div>
+        </button>
+
+        <button class="quick-action-card" (click)="navigateToDrivers()">
+          <div class="action-icon action-icon-drivers">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.293-.707L19 9.414a1 1 0 0 0-.707-.293H15.5L14 7H9L7.5 9.121H5.207a1 1 0 0 0-.707.293L2 12.121V16h3"/>
+              <circle cx="6.5" cy="16" r="2.5"/>
+              <circle cx="16.5" cy="16" r="2.5"/>
+            </svg>
+          </div>
+          <div class="action-content">
+            <div class="action-title">Add Driver</div>
+            <div class="action-description">Register new driver</div>
+          </div>
+        </button>
+
+        <button class="quick-action-card" (click)="navigateToRides()">
+          <div class="action-icon action-icon-rides">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+            </svg>
+          </div>
+          <div class="action-content">
+            <div class="action-title">View Reports</div>
+            <div class="action-description">Analytics and insights</div>
+          </div>
+        </button>
+
+        <button class="quick-action-card">
+          <div class="action-icon action-icon-settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 -1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </div>
+          <div class="action-content">
+            <div class="action-title">Settings</div>
+            <div class="action-description">System configuration</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

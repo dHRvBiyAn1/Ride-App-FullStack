@@ -1,0 +1,237 @@
+<div class="dashboard-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <app-loading size="lg" message="Loading your dashboard..."></app-loading>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading" class="dashboard-content">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+      <div class="welcome-section">
+        <h1 class="dashboard-title">
+          {{ getGreeting() }}, {{ getGreeting() }}, {{ getFirstName() }}! 👋
+        </h1>
+        <p class="dashboard-subtitle">
+          Here's what's happening with your rides today
+        </p>
+      </div>
+      <div class="quick-actions">
+        <button class="btn btn-primary" (click)="bookNewRide()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.293-.707L19 9.414a1 1 0 0 0-.707-.293H15.5L14 7H9L7.5 9.121H5.207a1 1 0 0 0-.707.293L2 12.121V16h3"/>
+            <circle cx="6.5" cy="16" r="2.5"/>
+            <circle cx="16.5" cy="16" r="2.5"/>
+          </svg>
+          Book a Ride
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Ride Alert -->
+    <div class="active-ride-alert" *ngIf="activeRide">
+      <div class="alert-content">
+        <div class="alert-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div class="alert-info">
+          <h4 class="alert-title">Active Ride</h4>
+          <p class="alert-message">
+            {{ activeRide.status === 'CONFIRMED' ? 'Your ride is confirmed' : 'Ride in progress' }} 
+            - {{ activeRide.pickupLocation }} to {{ activeRide.destinationLocation }}
+          </p>
+        </div>
+        <div class="alert-actions">
+          <button class="btn btn-sm btn-outline" (click)="viewAllRides()">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-primary">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.293-.707L19 9.414a1 1 0 0 0-.707-.293H15.5L14 7H9L7.5 9.121H5.207a1 1 0 0 0-.707.293L2 12.121V16h3"/>
+            <circle cx="6.5" cy="16" r="2.5"/>
+            <circle cx="16.5" cy="16" r="2.5"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.totalRides }}</div>
+          <div class="stat-label">Total Rides</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-success">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22,4 12,14.01 9,11.01"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.completedRides }}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-warning">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stats.activeRides }}</div>
+          <div class="stat-label">Active</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-info">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatCurrency(stats.totalSpent) }}</div>
+          <div class="stat-label">Total Spent</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+      <!-- Recent Rides -->
+      <div class="content-section">
+        <div class="section-header">
+          <h3 class="section-title">Recent Rides</h3>
+          <button class="btn btn-sm btn-outline" (click)="viewAllRides()">
+            View All
+          </button>
+        </div>
+        
+        <div class="rides-list" *ngIf="recentRides.length > 0; else noRides">
+          <div 
+            class="ride-card"
+            *ngFor="let ride of recentRides">
+            <div class="ride-info">
+              <div class="ride-route">
+                <div class="route-point">
+                  <div class="route-dot pickup"></div>
+                  <span class="route-location">{{ ride.pickupLocation }}</span>
+                </div>
+                <div class="route-line"></div>
+                <div class="route-point">
+                  <div class="route-dot destination"></div>
+                  <span class="route-location">{{ ride.destinationLocation }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="ride-meta">
+              <div class="ride-type">{{ ride.rideType }}</div>
+              <div class="ride-status" [style.color]="getStatusColor(ride.status)">
+                {{ ride.status | titlecase }}
+              </div>
+              <div class="ride-fare">{{ formatCurrency(ride.estimatedFare || 0) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noRides>
+          <div class="empty-state">
+            <div class="empty-icon">🚗</div>
+            <h4 class="empty-title">No rides yet</h4>
+            <p class="empty-message">Book your first ride to get started!</p>
+            <button class="btn btn-primary" (click)="bookNewRide()">
+              Book Now
+            </button>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Recent Payments -->
+      <div class="content-section">
+        <div class="section-header">
+          <h3 class="section-title">Recent Payments</h3>
+        </div>
+        
+        <div class="payments-list" *ngIf="recentPayments.length > 0; else noPayments">
+          <div 
+            class="payment-card"
+            *ngFor="let payment of recentPayments">
+            <div class="payment-info">
+              <div class="payment-method">
+                <div class="method-icon">💳</div>
+                <span>{{ payment.paymentMethod | titlecase }}</span>
+              </div>
+              <div class="payment-date">
+                {{ payment.createdDate | date:'MMM dd, yyyy' }}
+              </div>
+            </div>
+            <div class="payment-meta">
+              <div class="payment-amount">{{ formatCurrency(payment.amount) }}</div>
+              <div 
+                class="payment-status" 
+                [style.color]="getPaymentStatusColor(payment.status)">
+                {{ payment.status | titlecase }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noPayments>
+          <div class="empty-state">
+            <div class="empty-icon">💳</div>
+            <h4 class="empty-title">No payments</h4>
+            <p class="empty-message">Your payment history will appear here</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="content-section quick-stats">
+        <div class="section-header">
+          <h3 class="section-title">Quick Stats</h3>
+        </div>
+        
+        <div class="stats-list">
+          <div class="quick-stat">
+            <div class="quick-stat-icon">⭐</div>
+            <div class="quick-stat-info">
+              <div class="quick-stat-value">{{ stats.averageRating || 'N/A' }}</div>
+              <div class="quick-stat-label">Avg Rating Given</div>
+            </div>
+          </div>
+          
+          <div class="quick-stat">
+            <div class="quick-stat-icon">🎯</div>
+            <div class="quick-stat-info">
+              <div class="quick-stat-value">
+                {{ stats.completedRides > 0 ? ((stats.completedRides / stats.totalRides) * 100).toFixed(0) + '%' : '0%' }}
+              </div>
+              <div class="quick-stat-label">Completion Rate</div>
+            </div>
+          </div>
+          
+          <div class="quick-stat">
+            <div class="quick-stat-icon">💰</div>
+            <div class="quick-stat-info">
+              <div class="quick-stat-value">
+                {{ stats.completedRides > 0 ? formatCurrency(stats.totalSpent / stats.completedRides) : '$0' }}
+              </div>
+              <div class="quick-stat-label">Avg Cost per Ride</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

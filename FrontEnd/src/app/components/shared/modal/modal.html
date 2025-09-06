@@ -1,0 +1,59 @@
+<div 
+  *ngIf="isOpen" 
+  class="modal-overlay"
+  (click)="onBackdropClick($event)"
+  (keydown)="onKeyDown($event)"
+  tabindex="-1">
+  
+  <div class="modal-container" [class]="'modal-' + size">
+    <!-- Modal Header -->
+    <div class="modal-header" *ngIf="title || closable">
+      <h3 class="modal-title" *ngIf="title">{{ title }}</h3>
+      <button 
+        *ngIf="closable"
+        class="modal-close"
+        (click)="onClose()"
+        [disabled]="loading"
+        type="button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <ng-content></ng-content>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer" *ngIf="showFooter">
+      <button 
+        class="btn btn-secondary"
+        (click)="onCancel()"
+        [disabled]="loading"
+        type="button">
+        <app-loading 
+          *ngIf="loading" 
+          size="sm" 
+          color="gray">
+        </app-loading>
+        <span *ngIf="!loading">{{ cancelText }}</span>
+      </button>
+      <button 
+        class="btn"
+        [class]="confirmButtonClass"
+        (click)="onConfirm()"
+        [disabled]="loading"
+        type="button">
+        <app-loading 
+          *ngIf="loading" 
+          size="sm" 
+          color="white">
+        </app-loading>
+        <span *ngIf="!loading">{{ confirmText }}</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,865 @@
+<div class="payment-container">
+  <!-- Header -->
+  <div class="payment-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        {{ currentRide ? 'Complete Payment' : (isAdmin() ? 'Payment Management' : 'Payment History') }}
+      </h1>
+      <p class="page-subtitle">
+        {{ currentRide ? 'Secure payment processing for your ride' : 
+           (isAdmin() ? 'Monitor and manage all platform payments' : 'View your payment history and manage payment methods') }}
+      </p>
+    </div>
+    <div class="header-actions" *ngIf="!currentRide">
+      <button class="btn btn-outline btn-sm" (click)="exportPayments()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7,10 12,15 17,10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="toggleFilters()" *ngIf="!isAdmin()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+        </svg>
+        Filters
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="toggleViewMode()" *ngIf="!currentRide">
+        <svg *ngIf="viewMode === 'list'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <svg *ngIf="viewMode === 'grid'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        {{ viewMode === 'list' ? 'Grid' : 'List' }}
+      </button>
+      <button class="btn btn-primary" (click)="openAddPaymentMethodModal()" *ngIf="!isAdmin()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Payment Method
+      </button>
+    </div>
+  </div>
+
+  <!-- Current Ride Payment Section -->
+  <div *ngIf="currentRide && fareEstimate" class="ride-payment-section">
+    <div class="ride-summary-card">
+      <div class="ride-header">
+        <h3 class="ride-title">Ride Summary</h3>
+        <div class="ride-status">{{ currentRide.status | titlecase }}</div>
+      </div>
+      
+      <div class="ride-details">
+        <div class="route-summary">
+          <div class="route-point">
+            <div class="route-dot pickup"></div>
+            <span class="route-location">{{ currentRide.pickupLocation }}</span>
+          </div>
+          <div class="route-line"></div>
+          <div class="route-point">
+            <div class="route-dot destination"></div>
+            <span class="route-location">{{ currentRide.destinationLocation }}</span>
+          </div>
+        </div>
+        
+        <div class="ride-info">
+          <div class="info-item">
+            <span class="info-label">Ride Type:</span>
+            <span class="info-value">{{ currentRide.rideType | titlecase }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Distance:</span>
+            <span class="info-value">{{ fareEstimate.distance }} miles</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Duration:</span>
+            <span class="info-value">{{ fareEstimate.estimatedDuration }} minutes</span>
+          </div>
+        </div>
+        
+        <div class="fare-breakdown">
+          <div class="fare-item">
+            <span class="fare-label">Base Fare:</span>
+            <span class="fare-value">{{ formatCurrency(fareEstimate.baseFare) }}</span>
+          </div>
+          <div class="fare-item">
+            <span class="fare-label">Distance ({{ fareEstimate.distance }} miles):</span>
+            <span class="fare-value">{{ formatCurrency(fareEstimate.distance * fareEstimate.pricePerMile) }}</span>
+          </div>
+          <div class="fare-divider"></div>
+          <div class="fare-total">
+            <span class="fare-label">Total Amount:</span>
+            <span class="fare-value">{{ formatCurrency(fareEstimate.estimatedFare) }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="payment-actions">
+        <button class="btn btn-primary btn-lg btn-full" (click)="openProcessPaymentModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          Pay {{ formatCurrency(fareEstimate.estimatedFare) }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards (for admin or when not processing ride payment) -->
+  <div *ngIf="!currentRide" class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-primary">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+          <line x1="1" y1="10" x2="23" y2="10"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.totalPayments }}</div>
+        <div class="stat-label">Total Payments</div>
+        <div class="stat-trend">{{ formatCurrency(stats.totalAmount) }} processed</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22,4 12,14.01 9,11.01"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.completedPayments }}</div>
+        <div class="stat-label">Successful</div>
+        <div class="stat-trend">{{ stats.successRate.toFixed(1) }}% success rate</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.pendingPayments }}</div>
+        <div class="stat-label">Pending</div>
+        <div class="stat-trend">{{ stats.failedPayments }} failed</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-info">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ formatCurrency(stats.monthlyRevenue) }}</div>
+        <div class="stat-label">Monthly Revenue</div>
+        <div class="stat-trend">{{ formatCurrency(stats.averageAmount) }} avg</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Payment Methods (for customers) -->
+  <div *ngIf="!isAdmin() && !currentRide && savedPaymentMethods.length > 0" class="payment-methods-section">
+    <div class="section-header">
+      <h3 class="section-title">Saved Payment Methods</h3>
+      <button class="btn btn-sm btn-outline" (click)="openAddPaymentMethodModal()">
+        Add New Method
+      </button>
+    </div>
+    
+    <div class="payment-methods-grid">
+      <div class="payment-method-card" *ngFor="let method of savedPaymentMethods">
+        <div class="method-header">
+          <div class="method-icon">{{ getMethodIcon(method.type) }}</div>
+          <div class="method-info">
+            <div class="method-name">{{ method.displayName }}</div>
+            <div class="method-type">{{ getMethodName(method.type) }}</div>
+          </div>
+          <div class="method-actions">
+            <button 
+              *ngIf="!method.isDefault"
+              class="btn btn-sm btn-outline"
+              (click)="setDefaultPaymentMethod(method.id)">
+              Set Default
+            </button>
+            <button 
+              class="btn btn-sm btn-outline btn-danger"
+              (click)="removePaymentMethod(method.id)">
+              Remove
+            </button>
+          </div>
+        </div>
+        
+        <div class="method-details" *ngIf="method.lastFour">
+          <div class="detail-item">
+            <span>**** **** **** {{ method.lastFour }}</span>
+          </div>
+          <div class="detail-item" *ngIf="method.expiryDate">
+            <span>Expires {{ method.expiryDate }}</span>
+          </div>
+        </div>
+        
+        <div class="method-badge" *ngIf="method.isDefault">
+          <span class="badge-default">Default</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div *ngIf="!currentRide" class="filters-section" [class.show]="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">Status</label>
+          <select formControlName="status" class="form-control form-select">
+            <option value="">All Statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="FAILED">Failed</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="REFUNDED">Refunded</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">Payment Method</label>
+          <select formControlName="method" class="form-control form-select">
+            <option value="">All Methods</option>
+            <option value="CREDIT_CARD">Credit Card</option>
+            <option value="DEBIT_CARD">Debit Card</option>
+            <option value="DIGITAL_WALLET">Digital Wallet</option>
+            <option value="UPI">UPI</option>
+            <option value="CASH">Cash</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">From Date</label>
+          <input type="date" formControlName="dateFrom" class="form-control">
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">To Date</label>
+          <input type="date" formControlName="dateTo" class="form-control">
+        </div>
+        
+        <div class="filter-group search-group">
+          <label class="filter-label">Search</label>
+          <div class="search-input-container">
+            <input 
+              type="text" 
+              formControlName="searchTerm" 
+              class="form-control search-input"
+              placeholder="Search transaction ID, amount...">
+            <div class="search-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="filters-actions">
+        <button type="button" class="btn btn-sm btn-outline" (click)="clearFilters()">
+          Clear Filters
+        </button>
+        <div class="results-count">
+          {{ filteredPayments.length }} {{ filteredPayments.length === 1 ? 'payment' : 'payments' }} found
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading && !currentRide" class="loading-container">
+    <app-loading size="lg" message="Loading payments..."></app-loading>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoading && !currentRide" class="payments-content">
+    <!-- Sort Options -->
+    <div class="sort-options" *ngIf="filteredPayments.length > 0">
+      <div class="sort-buttons">
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'createdDate'"
+          (click)="setSortBy('createdDate')">
+          Date
+          <svg *ngIf="sortBy === 'createdDate'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'amount'"
+          (click)="setSortBy('amount')">
+          Amount
+          <svg *ngIf="sortBy === 'amount'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'status'"
+          (click)="setSortBy('status')">
+          Status
+          <svg *ngIf="sortBy === 'status'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'method'"
+          (click)="setSortBy('method')">
+          Method
+          <svg *ngIf="sortBy === 'method'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div *ngIf="viewMode === 'grid'" class="payments-grid">
+      <div class="payment-card" *ngFor="let payment of getPaginatedPayments(); trackBy: trackByPaymentId">
+        <div class="card-header">
+          <div class="payment-method-info">
+            <div class="method-icon">{{ getMethodIcon(payment.paymentMethod) }}</div>
+            <div class="method-details">
+              <div class="method-name">{{ getMethodName(payment.paymentMethod) }}</div>
+              <div class="transaction-id">{{ payment.transactionId }}</div>
+            </div>
+          </div>
+          <div class="payment-status" [style.color]="getStatusColor(payment.status)">
+            {{ payment.status | titlecase }}
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="payment-amount">{{ formatCurrency(payment.amount) }}</div>
+          <div class="payment-date">{{ formatDate(payment.createdDate || '') }}</div>
+          <div class="payment-time-ago">{{ getTimeAgo(payment.createdDate || '') }}</div>
+          
+          <div class="payment-details" *ngIf="isAdmin()">
+            <div class="detail-row">
+              <span class="detail-label">Customer ID:</span>
+              <span class="detail-value">{{ payment.customerId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Ride ID:</span>
+              <span class="detail-value">{{ payment.rideId }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-actions">
+          <button 
+            class="btn btn-sm btn-outline"
+            (click)="openPaymentDetailsModal(payment)">
+            View Details
+          </button>
+          <button 
+            *ngIf="isAdmin() && payment.status === 'COMPLETED'"
+            class="btn btn-sm btn-outline btn-warning"
+            (click)="openRefundModal(payment)">
+            Refund
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div *ngIf="viewMode === 'list'" class="payments-list">
+      <div class="list-header">
+        <div class="header-col col-method">Method</div>
+        <div class="header-col col-amount">Amount</div>
+        <div class="header-col col-status">Status</div>
+        <div class="header-col col-date">Date</div>
+        <div class="header-col col-transaction" *ngIf="isAdmin()">Transaction ID</div>
+        <div class="header-col col-actions">Actions</div>
+      </div>
+      
+      <div class="payment-row" *ngFor="let payment of getPaginatedPayments(); trackBy: trackByPaymentId">
+        <div class="row-col col-method">
+          <div class="method-info">
+            <div class="method-icon">{{ getMethodIcon(payment.paymentMethod) }}</div>
+            <div class="method-text">{{ getMethodName(payment.paymentMethod) }}</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-amount">
+          <div class="amount-value">{{ formatCurrency(payment.amount) }}</div>
+        </div>
+        
+        <div class="row-col col-status">
+          <div class="status-badge" [style.color]="getStatusColor(payment.status)">
+            {{ payment.status | titlecase }}
+          </div>
+        </div>
+        
+        <div class="row-col col-date">
+          <div class="date-info">
+            <div class="date-primary">{{ formatDate(payment.createdDate || '') }}</div>
+            <div class="date-secondary">{{ getTimeAgo(payment.createdDate || '') }}</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-transaction" *ngIf="isAdmin()">
+          <div class="transaction-info">
+            <div class="transaction-id">{{ payment.transactionId }}</div>
+            <div class="customer-id">Customer: {{ payment.customerId }}</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-actions">
+          <div class="action-buttons">
+            <button 
+              class="btn btn-sm btn-outline action-btn"
+              (click)="openPaymentDetailsModal(payment)">
+              Details
+            </button>
+            <button 
+              *ngIf="isAdmin() && payment.status === 'COMPLETED'"
+              class="btn btn-sm btn-outline action-btn btn-warning"
+              (click)="openRefundModal(payment)">
+              Refund
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredPayments.length === 0" class="empty-state">
+      <div class="empty-icon">💳</div>
+      <h3 class="empty-title">No payments found</h3>
+      <p class="empty-message">
+        {{ payments.length === 0 ? 
+           'No payments have been made yet.' : 
+           'Try adjusting your filters to see more results.' }}
+      </p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="totalPages > 1">
+      <div class="pagination">
+        <button 
+          class="pagination-btn"
+          [disabled]="currentPage === 1"
+          (click)="previousPage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15,18 9,12 15,6"/>
+          </svg>
+          Previous
+        </button>
+        
+        <div class="pagination-info">
+          Page {{ currentPage }} of {{ totalPages }}
+        </div>
+        
+        <button 
+          class="pagination-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()">
+          Next
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9,18 15,12 9,6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Process Payment Modal -->
+<app-modal 
+  [isOpen]="showProcessPaymentModal"
+  [title]="'Complete Payment'"
+  [confirmText]="'Process Payment'"
+  [cancelText]="'Cancel'"
+  [size]="'lg'"
+  [loading]="isProcessingPayment"
+  (close)="closeProcessPaymentModal()"
+  (confirm)="processPayment()"
+  (cancel)="closeProcessPaymentModal()">
+  
+  <div class="payment-modal-content">
+    <!-- Payment Amount Summary -->
+    <div class="payment-summary">
+      <div class="summary-header">
+        <h4>Payment Summary</h4>
+        <div class="total-amount">{{ formatCurrency(fareEstimate?.estimatedFare || 0) }}</div>
+      </div>
+      <div class="summary-details">
+        <div class="detail-item">
+          <span>Ride Type: {{ currentRide?.rideType | titlecase }}</span>
+        </div>
+        <div class="detail-item">
+          <span>Distance: {{ fareEstimate?.distance }} miles</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Payment Method Selection -->
+    <form [formGroup]="paymentForm" class="payment-form">
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <select formControlName="paymentMethod" class="form-control form-select">
+          <option value="CREDIT_CARD">Credit Card</option>
+          <option value="DEBIT_CARD">Debit Card</option>
+          <option value="DIGITAL_WALLET">Digital Wallet</option>
+          <option value="UPI">UPI</option>
+          <option value="CASH">Cash</option>
+        </select>
+      </div>
+      
+      <!-- Existing Payment Methods -->
+      <div class="form-group" *ngIf="savedPaymentMethods.length > 0">
+        <div class="checkbox-group">
+          <input 
+            type="checkbox" 
+            id="useExisting" 
+            formControlName="useExistingMethod">
+          <label for="useExisting">Use saved payment method</label>
+        </div>
+        
+        <select 
+          *ngIf="paymentForm.get('useExistingMethod')?.value"
+          formControlName="existingMethodId" 
+          class="form-control form-select">
+          <option value="">Select saved method</option>
+          <option *ngFor="let method of savedPaymentMethods" [value]="method.id">
+            {{ method.displayName }}
+          </option>
+        </select>
+      </div>
+    </form>
+    
+    <!-- Card Details Form -->
+    <form 
+      *ngIf="!paymentForm.get('useExistingMethod')?.value" 
+      [formGroup]="cardForm" 
+      class="card-form">
+      
+      <div class="form-section">
+        <h5 class="section-title">Card Details</h5>
+        
+        <div class="form-group">
+          <label class="form-label">Card Number</label>
+          <input
+            type="text"
+            formControlName="cardNumber"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(cardForm, 'cardNumber')"
+            placeholder="1234 5678 9012 3456"
+            maxlength="16">
+          <div class="form-error" *ngIf="isFieldInvalid(cardForm, 'cardNumber')">
+            {{ getFieldError(cardForm, 'cardNumber') }}
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Expiry Month</label>
+            <select 
+              formControlName="expiryMonth" 
+              class="form-control form-select"
+              [class.is-invalid]="isFieldInvalid(cardForm, 'expiryMonth')">
+              <option value="">Month</option>
+              <option *ngFor="let month of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="month">
+                {{ month.toString().padStart(2, '0') }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Expiry Year</label>
+            <select 
+              formControlName="expiryYear" 
+              class="form-control form-select"
+              [class.is-invalid]="isFieldInvalid(cardForm, 'expiryYear')">
+              <option value="">Year</option>
+              <option *ngFor="let year of [2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034]" [value]="year">
+                {{ year }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">CVV</label>
+            <input
+              type="text"
+              formControlName="cvv"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid(cardForm, 'cvv')"
+              placeholder="123"
+              maxlength="4">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Cardholder Name</label>
+          <input
+            type="text"
+            formControlName="cardholderName"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(cardForm, 'cardholderName')"
+            placeholder="John Doe">
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="saveMethod" formControlName="saveMethod">
+          <label for="saveMethod">Save this payment method for future use</label>
+        </div>
+      </div>
+    </form>
+    
+    <!-- Security Notice -->
+    <div class="security-notice">
+      <div class="security-icon">🔒</div>
+      <div class="security-text">
+        <strong>Secure Payment</strong>
+        <p>Your payment information is encrypted and secure. We never store your card details.</p>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Add Payment Method Modal -->
+<app-modal 
+  [isOpen]="showAddPaymentMethodModal"
+  [title]="'Add Payment Method'"
+  [confirmText]="'Add Method'"
+  [cancelText]="'Cancel'"
+  [loading]="isAddingPaymentMethod"
+  (close)="closeAddPaymentMethodModal()"
+  (confirm)="addPaymentMethod()"
+  (cancel)="closeAddPaymentMethodModal()">
+  
+  <form [formGroup]="cardForm" class="modal-form">
+    <div class="form-group">
+      <label class="form-label">Card Number</label>
+      <input
+        type="text"
+        formControlName="cardNumber"
+        class="form-control"
+        [class.is-invalid]="isFieldInvalid(cardForm, 'cardNumber')"
+        placeholder="1234 5678 9012 3456"
+        maxlength="16">
+      <div class="form-error" *ngIf="isFieldInvalid(cardForm, 'cardNumber')">
+        {{ getFieldError(cardForm, 'cardNumber') }}
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Expiry Month</label>
+        <select formControlName="expiryMonth" class="form-control form-select">
+          <option value="">Month</option>
+          <option *ngFor="let month of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="month">
+            {{ month.toString().padStart(2, '0') }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Expiry Year</label>
+        <select formControlName="expiryYear" class="form-control form-select">
+          <option value="">Year</option>
+          <option *ngFor="let year of [2024,2025,2026,2027,2028,2029,2030]" [value]="year">
+            {{ year }}
+          </option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">CVV</label>
+      <input
+        type="text"
+        formControlName="cvv"
+        class="form-control"
+        placeholder="123"
+        maxlength="4">
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Cardholder Name</label>
+      <input
+        type="text"
+        formControlName="cardholderName"
+        class="form-control"
+        placeholder="John Doe">
+    </div>
+  </form>
+</app-modal>
+
+<!-- Payment Details Modal -->
+<app-modal 
+  [isOpen]="showPaymentDetailsModal"
+  [title]="'Payment Details'"
+  [confirmText]="'Close'"
+  [showFooter]="false"
+  (close)="closePaymentDetailsModal()">
+  
+  <div *ngIf="selectedPayment" class="payment-details">
+    <div class="details-header">
+      <div class="payment-status-large" [style.color]="getStatusColor(selectedPayment.status)">
+        {{ selectedPayment.status | titlecase }}
+      </div>
+      <div class="payment-amount-large">{{ formatCurrency(selectedPayment.amount) }}</div>
+    </div>
+    
+    <div class="details-sections">
+      <div class="details-section">
+        <h4 class="details-section-title">Transaction Information</h4>
+        <div class="details-list">
+          <div class="detail-item">
+            <span class="detail-label">Transaction ID:</span>
+            <span class="detail-value">{{ selectedPayment.transactionId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Payment Method:</span>
+            <span class="detail-value">
+              {{ getMethodIcon(selectedPayment.paymentMethod) }} {{ getMethodName(selectedPayment.paymentMethod) }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Amount:</span>
+            <span class="detail-value">{{ formatCurrency(selectedPayment.amount) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value" [style.color]="getStatusColor(selectedPayment.status)">
+              {{ selectedPayment.status | titlecase }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="details-section" *ngIf="isAdmin()">
+        <h4 class="details-section-title">Customer Information</h4>
+        <div class="details-list">
+          <div class="detail-item">
+            <span class="detail-label">Customer ID:</span>
+            <span class="detail-value">{{ selectedPayment.customerId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Ride ID:</span>
+            <span class="detail-value">{{ selectedPayment.rideId }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="details-section">
+        <h4 class="details-section-title">Timestamps</h4>
+        <div class="details-list">
+          <div class="detail-item">
+            <span class="detail-label">Created:</span>
+            <span class="detail-value">{{ formatDate(selectedPayment.createdDate || '') }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedPayment.processedAt">
+            <span class="detail-label">Processed:</span>
+            <span class="detail-value">{{ formatDate(selectedPayment.processedAt) }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedPayment.updatedDate">
+            <span class="detail-label">Last Updated:</span>
+            <span class="detail-value">{{ formatDate(selectedPayment.updatedDate) }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="details-section" *ngIf="selectedPayment.failureReason">
+        <h4 class="details-section-title">Failure Information</h4>
+        <div class="failure-reason">
+          <div class="failure-icon">⚠️</div>
+          <div class="failure-text">{{ selectedPayment.failureReason }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Refund Modal -->
+<app-modal 
+  [isOpen]="showRefundModal"
+  [title]="'Process Refund'"
+  [confirmText]="'Process Refund'"
+  [cancelText]="'Cancel'"
+  [confirmButtonClass]="'btn-warning'"
+  [loading]="isProcessingRefund"
+  (close)="closeRefundModal()"
+  (confirm)="processRefund()"
+  (cancel)="closeRefundModal()">
+  
+  <div *ngIf="selectedPayment" class="refund-modal-content">
+    <div class="refund-summary">
+      <h4>Refund Summary</h4>
+      <div class="original-payment">
+        <div class="payment-info">
+          <span>Original Payment: {{ formatCurrency(selectedPayment.amount) }}</span>
+          <span>Transaction ID: {{ selectedPayment.transactionId }}</span>
+          <span>Date: {{ formatDate(selectedPayment.createdDate || '') }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <form [formGroup]="refundForm" class="refund-form">
+      <div class="form-group">
+        <label class="form-label">Refund Amount</label>
+        <input
+          type="number"
+          formControlName="amount"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(refundForm, 'amount')"
+          [max]="selectedPayment.amount"
+          step="0.01">
+        <div class="form-error" *ngIf="isFieldInvalid(refundForm, 'amount')">
+          {{ getFieldError(refundForm, 'amount') }}
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Refund Reason</label>
+        <textarea
+          formControlName="reason"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(refundForm, 'reason')"
+          rows="3"
+          placeholder="Please provide a reason for the refund..."></textarea>
+        <div class="form-error" *ngIf="isFieldInvalid(refundForm, 'reason')">
+          {{ getFieldError(refundForm, 'reason') }}
+        </div>
+      </div>
+    </form>
+    
+    <div class="refund-warning">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-text">
+        <strong>Important:</strong> This action cannot be undone. The refund will be processed back to the original payment method and may take 3-5 business days to appear.
+      </div>
+    </div>
+  </div>
+</app-modal>

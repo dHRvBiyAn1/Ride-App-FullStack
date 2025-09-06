@@ -1,0 +1,38 @@
+<div class="app-container">
+  <!-- Notifications -->
+  <div class="notifications-container">
+    <div 
+      *ngFor="let notification of (notificationService.notifications$ | async)" 
+      class="notification"
+      [class.notification-success]="notification.type === 'success'"
+      [class.notification-error]="notification.type === 'error'"
+      [class.notification-warning]="notification.type === 'warning'"
+      [class.notification-info]="notification.type === 'info'">
+      <div class="notification-content">
+        <div class="notification-title">{{ notification.title }}</div>
+        <div class="notification-message">{{ notification.message }}</div>
+      </div>
+      <button 
+        class="notification-close"
+        (click)="notificationService.remove(notification.id)">
+        ×
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="main-layout" *ngIf="isLoggedIn() && showNavigation">
+    <app-sidebar></app-sidebar>
+    <div class="main-content">
+      <app-header></app-header>
+      <div class="content-area">
+        <router-outlet></router-outlet>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Layout -->
+  <div class="login-layout" *ngIf="!isLoggedIn() || !showNavigation">
+    <router-outlet></router-outlet>
+  </div>
+</div>

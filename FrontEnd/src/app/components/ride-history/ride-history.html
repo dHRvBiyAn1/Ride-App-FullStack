@@ -1,0 +1,366 @@
+<div class="ride-history-container">
+  <!-- Header -->
+  <div class="history-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        {{ isAdmin() ? 'All Rides' : 'My Rides' }}
+      </h1>
+      <p class="page-subtitle">
+        {{ isAdmin() ? 'Manage and monitor all platform rides' : 'View your ride history and track your journeys' }}
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" (click)="exportRides()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7,10 12,15 17,10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="toggleFilters()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+        </svg>
+        Filters
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="toggleViewMode()">
+        <svg *ngIf="viewMode === 'list'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <svg *ngIf="viewMode === 'grid'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        {{ viewMode === 'list' ? 'Grid' : 'List' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section" [class.show]="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">Status</label>
+          <select formControlName="status" class="form-control form-select">
+            <option value="">All Statuses</option>
+            <option value="REQUESTED">Requested</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">Ride Type</label>
+          <select formControlName="rideType" class="form-control form-select">
+            <option value="">All Types</option>
+            <option value="ECONOMY">Economy</option>
+            <option value="PREMIUM">Premium</option>
+            <option value="LUXURY">Luxury</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">From Date</label>
+          <input type="date" formControlName="dateFrom" class="form-control">
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">To Date</label>
+          <input type="date" formControlName="dateTo" class="form-control">
+        </div>
+        
+        <div class="filter-group search-group">
+          <label class="filter-label">Search</label>
+          <div class="search-input-container">
+            <input 
+              type="text" 
+              formControlName="searchTerm" 
+              class="form-control search-input"
+              placeholder="Search locations, names...">
+            <div class="search-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="filters-actions">
+        <button type="button" class="btn btn-sm btn-outline" (click)="clearFilters()">
+          Clear Filters
+        </button>
+        <div class="results-count">
+          {{ filteredRides.length }} {{ filteredRides.length === 1 ? 'ride' : 'rides' }} found
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <app-loading size="lg" message="Loading rides..."></app-loading>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoading" class="rides-content">
+    <!-- Sort Options -->
+    <div class="sort-options" *ngIf="filteredRides.length > 0">
+      <div class="sort-buttons">
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'date'"
+          (click)="setSortBy('date')">
+          Date
+          <svg *ngIf="sortBy === 'date'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'fare'"
+          (click)="setSortBy('fare')">
+          Fare
+          <svg *ngIf="sortBy === 'fare'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'status'"
+          (click)="setSortBy('status')">
+          Status
+          <svg *ngIf="sortBy === 'status'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div *ngIf="viewMode === 'list'" class="rides-list">
+      <div class="list-header" *ngIf="filteredRides.length > 0">
+        <div class="header-col col-route">Route</div>
+        <div class="header-col col-type">Type</div>
+        <div class="header-col col-status">Status</div>
+        <div class="header-col col-fare">Fare</div>
+        <div class="header-col col-date">Date</div>
+        <div class="header-col col-actions">Actions</div>
+      </div>
+      
+      <div class="ride-item" *ngFor="let ride of getPaginatedRides(); trackBy: trackByRideId">
+        <div class="ride-col col-route">
+          <div class="route-info">
+            <div class="route-point">
+              <div class="route-dot pickup"></div>
+              <span class="route-location">{{ ride.pickupLocation }}</span>
+            </div>
+            <div class="route-line"></div>
+            <div class="route-point">
+              <div class="route-dot destination"></div>
+              <span class="route-location">{{ ride.destinationLocation }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ride-col col-type">
+          <div class="ride-type-info">
+            <span class="ride-type-icon">{{ getRideTypeIcon(ride.rideType) }}</span>
+            <span class="ride-type-name">{{ ride.rideType | titlecase }}</span>
+          </div>
+        </div>
+        
+        <div class="ride-col col-status">
+          <div class="status-badge" [style.color]="getStatusColor(ride.status)">
+            {{ ride.status | titlecase }}
+          </div>
+        </div>
+        
+        <div class="ride-col col-fare">
+          <div class="fare-amount">{{ formatCurrency(ride.estimatedFare || 0) }}</div>
+        </div>
+        
+        <div class="ride-col col-date">
+          <div class="date-info">
+            <div class="date-primary">{{ formatDate(ride.createdDate || '') }}</div>
+            <div class="date-secondary">{{ getTimeAgo(ride.createdDate || '') }}</div>
+          </div>
+        </div>
+        
+        <div class="ride-col col-actions">
+          <div class="action-buttons">
+            <button 
+              *ngIf="canRateRide(ride)"
+              class="btn btn-sm btn-outline action-btn"
+              (click)="openRatingModal(ride)">
+              Rate Driver
+            </button>
+            <button 
+              *ngIf="ride.driverRating && !isAdmin()"
+              class="btn btn-sm btn-outline action-btn rated"
+              disabled>
+              Rated {{ ride.driverRating }}/5
+            </button>
+            <button class="btn btn-sm btn-outline action-btn">
+              Details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div *ngIf="viewMode === 'grid'" class="rides-grid">
+      <div class="ride-card" *ngFor="let ride of getPaginatedRides(); trackBy: trackByRideId">
+        <div class="card-header">
+          <div class="ride-type-badge">
+            <span class="ride-type-icon">{{ getRideTypeIcon(ride.rideType) }}</span>
+            <span>{{ ride.rideType | titlecase }}</span>
+          </div>
+          <div class="status-badge" [style.color]="getStatusColor(ride.status)">
+            {{ ride.status | titlecase }}
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="route-summary">
+            <div class="route-point">
+              <div class="route-dot pickup"></div>
+              <span class="route-text">{{ ride.pickupLocation }}</span>
+            </div>
+            <div class="route-arrow">→</div>
+            <div class="route-point">
+              <div class="route-dot destination"></div>
+              <span class="route-text">{{ ride.destinationLocation }}</span>
+            </div>
+          </div>
+          
+          <div class="ride-details" *ngIf="isAdmin()">
+            <div class="detail-item">
+              <span class="detail-label">Customer:</span>
+              <span class="detail-value">{{ ride.customerName || 'N/A' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Driver:</span>
+              <span class="detail-value">{{ ride.driverName || 'N/A' }}</span>
+            </div>
+          </div>
+          
+          <div class="fare-info">
+            <div class="fare-amount">{{ formatCurrency(ride.estimatedFare || 0) }}</div>
+            <div class="fare-date">{{ formatDate(ride.createdDate || '') }}</div>
+          </div>
+        </div>
+        
+        <div class="card-actions">
+          <button 
+            *ngIf="canRateRide(ride)"
+            class="btn btn-sm btn-primary card-action-btn"
+            (click)="openRatingModal(ride)">
+            Rate Driver
+          </button>
+          <button 
+            *ngIf="ride.driverRating && !isAdmin()"
+            class="btn btn-sm btn-outline card-action-btn rated"
+            disabled>
+            Rated {{ ride.driverRating }}⭐
+          </button>
+          <button class="btn btn-sm btn-outline card-action-btn">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredRides.length === 0" class="empty-state">
+      <div class="empty-icon">🚗</div>
+      <h3 class="empty-title">No rides found</h3>
+      <p class="empty-message">
+        {{ rides.length === 0 ? 
+           (isAdmin() ? 'No rides have been taken yet.' : 'You haven\'t taken any rides yet.') : 
+           'Try adjusting your filters to see more results.' }}
+      </p>
+      <button 
+        *ngIf="rides.length === 0 && !isAdmin()" 
+        class="btn btn-primary"
+        routerLink="/customer/book-ride">
+        Book Your First Ride
+      </button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="totalPages > 1">
+      <div class="pagination">
+        <button 
+          class="pagination-btn"
+          [disabled]="currentPage === 1"
+          (click)="previousPage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15,18 9,12 15,6"/>
+          </svg>
+          Previous
+        </button>
+        
+        <div class="pagination-info">
+          Page {{ currentPage }} of {{ totalPages }}
+        </div>
+        
+        <button 
+          class="pagination-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()">
+          Next
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9,18 15,12 9,6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Modal -->
+<app-modal 
+  [isOpen]="showRatingModal"
+  [title]="'Rate Your Driver'"
+  [confirmText]="'Submit Rating'"
+  [cancelText]="'Cancel'"
+  (close)="closeRatingModal()"
+  (confirm)="submitRating()"
+  (cancel)="closeRatingModal()">
+  
+  <div class="rating-modal-content" *ngIf="selectedRideForRating">
+    <div class="ride-info">
+      <h4>{{ selectedRideForRating.pickupLocation }} → {{ selectedRideForRating.destinationLocation }}</h4>
+      <p>Driver: {{ selectedRideForRating.driverName || 'N/A' }}</p>
+    </div>
+    
+    <div class="rating-selector">
+      <label class="rating-label">How was your ride?</label>
+      <div class="rating-stars">
+        <button 
+          *ngFor="let star of [1,2,3,4,5]"
+          type="button"
+          class="star-btn"
+          [class.active]="star <= ratingValue"
+          (click)="ratingValue = star">
+          ⭐
+        </button>
+      </div>
+      <div class="rating-text">{{ ratingValue }} out of 5 stars</div>
+    </div>
+  </div>
+</app-modal>

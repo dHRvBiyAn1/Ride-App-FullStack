@@ -1,0 +1,994 @@
+<div class="driver-management-container">
+  <!-- Header -->
+  <div class="management-header">
+    <div class="header-content">
+      <h1 class="page-title">Driver Management</h1>
+      <p class="page-subtitle">Manage your fleet of drivers and their performance</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline btn-sm" (click)="exportDrivers()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7,10 12,15 17,10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="toggleFilters()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+        </svg>
+        Filters
+      </button>
+      <button class="btn btn-outline btn-sm" (click)="toggleViewMode()">
+        <svg *ngIf="viewMode === 'grid'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        <svg *ngIf="viewMode === 'list'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        {{ viewMode === 'grid' ? 'List' : 'Grid' }}
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Driver
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-primary">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total Drivers</div>
+        <div class="stat-trend">{{ stats.onlinePercentage }}% Online</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-success">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22,4 12,14.01 9,11.01"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.active }}</div>
+        <div class="stat-label">Active Drivers</div>
+        <div class="stat-trend">Ready for rides</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-warning">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.busy }}</div>
+        <div class="stat-label">Busy Drivers</div>
+        <div class="stat-trend">On active rides</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-info">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.averageRating }}</div>
+        <div class="stat-label">Avg Rating</div>
+        <div class="stat-trend">{{ stats.totalRides }} total rides</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section" [class.show]="showFilters">
+    <form [formGroup]="filterForm" class="filters-form">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">Status</label>
+          <select formControlName="status" class="form-control form-select">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="BUSY">Busy</option>
+            <option value="OFFLINE">Offline</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="SUSPENDED">Suspended</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">Min Rating</label>
+          <select formControlName="minRating" class="form-control form-select">
+            <option value="0">All Ratings</option>
+            <option value="4.5">4.5+ Stars</option>
+            <option value="4.0">4.0+ Stars</option>
+            <option value="3.5">3.5+ Stars</option>
+            <option value="3.0">3.0+ Stars</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">Location</label>
+          <select formControlName="location" class="form-control form-select">
+            <option value="">All Locations</option>
+            <option *ngFor="let location of availableLocations" [value]="location">
+              {{ location }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="filter-group search-group">
+          <label class="filter-label">Search</label>
+          <div class="search-input-container">
+            <input 
+              type="text" 
+              formControlName="searchTerm" 
+              class="form-control search-input"
+              placeholder="Search drivers, vehicles, plates...">
+            <div class="search-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="filters-actions">
+        <button type="button" class="btn btn-sm btn-outline" (click)="clearFilters()">
+          Clear Filters
+        </button>
+        <div class="bulk-actions">
+          <select class="form-control form-select" (change)="onBulkStatusChange($event)">
+            <option value="">Bulk Actions</option>
+            <option value="ACTIVE">Set Active</option>
+            <option value="OFFLINE">Set Offline</option>
+            <option value="SUSPENDED">Suspend</option>
+          </select>
+        </div>
+        <div class="results-count">
+          {{ filteredDrivers.length }} {{ filteredDrivers.length === 1 ? 'driver' : 'drivers' }} found
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <app-loading size="lg" message="Loading drivers..."></app-loading>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!isLoading" class="drivers-content">
+    <!-- Sort Options -->
+    <div class="sort-options" *ngIf="filteredDrivers.length > 0">
+      <div class="sort-buttons">
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'name'"
+          (click)="setSortBy('name')">
+          Name
+          <svg *ngIf="sortBy === 'name'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'rating'"
+          (click)="setSortBy('rating')">
+          Rating
+          <svg *ngIf="sortBy === 'rating'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'totalRides'"
+          (click)="setSortBy('totalRides')">
+          Rides
+          <svg *ngIf="sortBy === 'totalRides'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+        <button 
+          class="sort-btn"
+          [class.active]="sortBy === 'status'"
+          (click)="setSortBy('status')">
+          Status
+          <svg *ngIf="sortBy === 'status'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline [attr.points]="sortOrder === 'asc' ? '6,9 12,15 18,9' : '18,15 12,9 6,15'"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div *ngIf="viewMode === 'grid'" class="drivers-grid">
+      <div class="driver-card" *ngFor="let driver of getPaginatedDrivers(); trackBy: trackByDriverId">
+        <div class="card-header">
+          <div class="driver-avatar">
+            {{ driver.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="driver-basic-info">
+            <div class="driver-name">{{ driver.name }}</div>
+            <div class="driver-email">{{ driver.email }}</div>
+          </div>
+          <div class="status-indicator">
+            <span class="status-icon">{{ getStatusIcon(driver.status) }}</span>
+            <select 
+              [value]="driver.status"
+              (change)="onStatusChange(driver, $event)"
+              class="status-select"
+              [style.color]="getStatusColor(driver.status)">
+              <option value="ACTIVE">Active</option>
+              <option value="BUSY">Busy</option>
+              <option value="OFFLINE">Offline</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="driver-stats">
+            <div class="stat-item">
+              <div class="stat-label">Rating</div>
+              <div class="stat-value rating-value">
+                <div class="rating-stars">
+                  <span *ngFor="let star of getRatingStars(driver.rating || 0)">{{ star }}</span>
+                </div>
+                <span class="rating-number">{{ driver.rating || 'N/A' }}</span>
+              </div>
+            </div>
+            
+            <div class="stat-item">
+              <div class="stat-label">Total Rides</div>
+              <div class="stat-value">{{ driver.totalRides || 0 }}</div>
+            </div>
+          </div>
+          
+          <div class="vehicle-info">
+            <div class="vehicle-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.293-.707L19 9.414a1 1 0 0 0-.707-.293H15.5L14 7H9L7.5 9.121H5.207a1 1 0 0 0-.707.293L2 12.121V16h3"/>
+                <circle cx="6.5" cy="16" r="2.5"/>
+                <circle cx="16.5" cy="16" r="2.5"/>
+              </svg>
+              Vehicle Details
+            </div>
+            <div class="vehicle-details">
+              <div>{{ driver.vehicle?.model }} ({{ driver.vehicle?.year }})</div>
+              <div>{{ driver.vehicle?.plateNumber }} • {{ driver.vehicle?.color }}</div>
+            </div>
+          </div>
+          
+          <div class="location-info">
+            <div class="location-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Current Location
+            </div>
+            <div class="location-address">{{ driver.location?.address || 'Not available' }}</div>
+          </div>
+          
+          <div class="join-date">
+            <span class="join-label">Joined:</span>
+            <span class="join-value">{{ formatDate(driver.createdDate || '') }}</span>
+          </div>
+        </div>
+        
+        <div class="card-actions">
+          <button 
+            class="btn btn-sm btn-outline action-btn"
+            (click)="openViewModal(driver)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            View
+          </button>
+          <button 
+            class="btn btn-sm btn-outline action-btn"
+            (click)="openEditModal(driver)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+          </button>
+          <button 
+            class="btn btn-sm btn-outline action-btn"
+            (click)="openLocationModal(driver)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Location
+          </button>
+          <button 
+            class="btn btn-sm btn-outline action-btn delete-btn"
+            (click)="openDeleteModal(driver)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3,6 5,6 21,6"/>
+              <path d="M19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"/>
+            </svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div *ngIf="viewMode === 'list'" class="drivers-list">
+      <div class="list-header">
+        <div class="header-col col-driver">Driver</div>
+        <div class="header-col col-contact">Contact</div>
+        <div class="header-col col-vehicle">Vehicle</div>
+        <div class="header-col col-status">Status</div>
+        <div class="header-col col-performance">Performance</div>
+        <div class="header-col col-joined">Joined</div>
+        <div class="header-col col-actions">Actions</div>
+      </div>
+      
+      <div class="driver-row" *ngFor="let driver of getPaginatedDrivers(); trackBy: trackByDriverId">
+        <div class="row-col col-driver">
+          <div class="driver-info">
+            <div class="driver-avatar">
+              {{ driver.name.charAt(0).toUpperCase() }}
+            </div>
+            <div class="driver-details">
+              <div class="driver-name">{{ driver.name }}</div>
+              <div class="driver-id">#{{ driver.id }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row-col col-contact">
+          <div class="contact-info">
+            <div class="driver-email">{{ driver.email }}</div>
+            <div class="driver-phone">{{ driver.phone }}</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-vehicle">
+          <div class="vehicle-info">
+            <div class="vehicle-model">{{ driver.vehicle?.model }}</div>
+            <div class="vehicle-plate">{{ driver.vehicle?.plateNumber }}</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-status">
+          <div class="status-control">
+            <span class="status-icon">{{ getStatusIcon(driver.status) }}</span>
+            <select 
+              [value]="driver.status"
+              (change)="onStatusChange(driver, $event)"
+              class="status-select-list"
+              [style.color]="getStatusColor(driver.status)">
+              <option value="ACTIVE">Active</option>
+              <option value="BUSY">Busy</option>
+              <option value="OFFLINE">Offline</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="row-col col-performance">
+          <div class="performance-info">
+            <div class="rating-display">
+              <span *ngFor="let star of getRatingStars(driver.rating || 0)">{{ star }}</span>
+              <span class="rating-number">({{ driver.rating || 'N/A' }})</span>
+            </div>
+            <div class="rides-count">{{ driver.totalRides || 0 }} rides</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-joined">
+          <div class="join-info">
+            <div class="join-date">{{ formatDate(driver.createdDate || '') }}</div>
+            <div class="join-ago">{{ getTimeAgo(driver.createdDate || '') }}</div>
+          </div>
+        </div>
+        
+        <div class="row-col col-actions">
+          <div class="action-buttons">
+            <button 
+              class="btn btn-sm btn-outline action-btn"
+              (click)="openViewModal(driver)"
+              title="View Details">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+            <button 
+              class="btn btn-sm btn-outline action-btn"
+              (click)="openEditModal(driver)"
+              title="Edit Driver">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button 
+              class="btn btn-sm btn-outline action-btn delete-btn"
+              (click)="openDeleteModal(driver)"
+              title="Delete Driver">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6"/>
+                <path d="M19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredDrivers.length === 0" class="empty-state">
+      <div class="empty-icon">🚗</div>
+      <h3 class="empty-title">No drivers found</h3>
+      <p class="empty-message">
+        {{ drivers.length === 0 ? 
+           'No drivers have been registered yet.' : 
+           'Try adjusting your filters to see more results.' }}
+      </p>
+      <button 
+        *ngIf="drivers.length === 0" 
+        class="btn btn-primary"
+        (click)="openCreateModal()">
+        Add First Driver
+      </button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="totalPages > 1">
+      <div class="pagination">
+        <button 
+          class="pagination-btn"
+          [disabled]="currentPage === 1"
+          (click)="previousPage()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15,18 9,12 15,6"/>
+          </svg>
+          Previous
+        </button>
+        
+        <div class="pagination-pages">
+          <button 
+            *ngFor="let page of [].constructor(totalPages); let i = index"
+            class="pagination-page"
+            [class.active]="i + 1 === currentPage"
+            (click)="goToPage(i + 1)">
+            {{ i + 1 }}
+          </button>
+        </div>
+        
+        <div class="pagination-info">
+          Page {{ currentPage }} of {{ totalPages }}
+        </div>
+        
+        <button 
+          class="pagination-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="nextPage()">
+          Next
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9,18 15,12 9,6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Driver Modal -->
+<app-modal 
+  [isOpen]="showCreateModal"
+  [title]="'Add New Driver'"
+  [confirmText]="'Create Driver'"
+  [cancelText]="'Cancel'"
+  [size]="'lg'"
+  (close)="closeCreateModal()"
+  (confirm)="createDriver()"
+  (cancel)="closeCreateModal()">
+  
+  <form [formGroup]="createDriverForm" class="modal-form">
+    <div class="form-section">
+      <h4 class="section-title">Personal Information</h4>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input
+            type="text"
+            formControlName="name"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(createDriverForm, 'name')"
+            placeholder="Enter full name">
+          <div class="form-error" *ngIf="isFieldInvalid(createDriverForm, 'name')">
+            {{ getFieldError(createDriverForm, 'name') }}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input
+            type="email"
+            formControlName="email"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(createDriverForm, 'email')"
+            placeholder="Enter email address">
+          <div class="form-error" *ngIf="isFieldInvalid(createDriverForm, 'email')">
+            {{ getFieldError(createDriverForm, 'email') }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input
+          type="tel"
+          formControlName="phone"
+          class="form-control"
+          [class.is-invalid]="isFieldInvalid(createDriverForm, 'phone')"
+          placeholder="Enter phone number">
+        <div class="form-error" *ngIf="isFieldInvalid(createDriverForm, 'phone')">
+          {{ getFieldError(createDriverForm, 'phone') }}
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section" formGroupName="vehicle">
+      <h4 class="section-title">Vehicle Information</h4>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Vehicle Model</label>
+          <input
+            type="text"
+            formControlName="model"
+            class="form-control"
+            placeholder="e.g., Toyota Camry">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Plate Number</label>
+          <input
+            type="text"
+            formControlName="plateNumber"
+            class="form-control"
+            placeholder="e.g., ABC-123"
+            style="text-transform: uppercase;">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Year</label>
+          <input
+            type="number"
+            formControlName="year"
+            class="form-control"
+            [min]="1990"
+            [max]="currentYear"
+            placeholder="Vehicle year">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <input
+            type="text"
+            formControlName="color"
+            class="form-control"
+            placeholder="e.g., White">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section" formGroupName="location">
+      <h4 class="section-title">Location Information</h4>
+      
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input
+          type="text"
+          formControlName="address"
+          class="form-control"
+          placeholder="Enter current address">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Latitude</label>
+          <input
+            type="number"
+            formControlName="latitude"
+            class="form-control"
+            step="0.000001"
+            placeholder="0.000000">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Longitude</label>
+          <input
+            type="number"
+            formControlName="longitude"
+            class="form-control"
+            step="0.000001"
+            placeholder="0.000000">
+        </div>
+      </div>
+    </div>
+  </form>
+</app-modal>
+
+<!-- View Driver Modal -->
+<app-modal 
+  [isOpen]="showViewModal"
+  [title]="(selectedDriver?.name || 'Driver') + ' Details'"
+  [confirmText]="'Close'"
+  [showFooter]="false"
+  [size]="'lg'"
+  (close)="closeViewModal()">
+  
+  <div *ngIf="selectedDriver" class="driver-profile">
+    <div class="profile-header">
+      <div class="profile-avatar">
+        {{ selectedDriver.name.charAt(0).toUpperCase() }}
+      </div>
+      <div class="profile-info">
+        <h3 class="profile-name">{{ selectedDriver.name }}</h3>
+        <div class="profile-status" [style.color]="getStatusColor(selectedDriver.status)">
+          {{ getStatusIcon(selectedDriver.status) }} {{ selectedDriver.status }}
+        </div>
+        <div class="profile-rating">
+          <span *ngFor="let star of getRatingStars(selectedDriver.rating || 0)">{{ star }}</span>
+          <span class="rating-text">{{ selectedDriver.rating || 'Not rated' }} / 5.0</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="profile-sections">
+      <div class="profile-section">
+        <h4 class="profile-section-title">Contact Information</h4>
+        <div class="profile-details">
+          <div class="detail-item">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value">{{ selectedDriver.email }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Phone:</span>
+            <span class="detail-value">{{ selectedDriver.phone }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-section">
+        <h4 class="profile-section-title">Vehicle Information</h4>
+        <div class="profile-details">
+          <div class="detail-item">
+            <span class="detail-label">Model:</span>
+            <span class="detail-value">{{ selectedDriver.vehicle?.model }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Plate Number:</span>
+            <span class="detail-value">{{ selectedDriver.vehicle?.plateNumber }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Year:</span>
+            <span class="detail-value">{{ selectedDriver.vehicle?.year }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Color:</span>
+            <span class="detail-value">{{ selectedDriver.vehicle?.color }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-section">
+        <h4 class="profile-section-title">Performance & Stats</h4>
+        <div class="profile-details">
+          <div class="detail-item">
+            <span class="detail-label">Total Rides:</span>
+            <span class="detail-value">{{ selectedDriver.totalRides || 0 }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Average Rating:</span>
+            <span class="detail-value">{{ selectedDriver.rating || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Joined:</span>
+            <span class="detail-value">{{ formatDateTime(selectedDriver.createdDate || '') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Last Updated:</span>
+            <span class="detail-value">{{ formatDateTime(selectedDriver.updatedDate || '') }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="profile-section">
+        <h4 class="profile-section-title">Current Location</h4>
+        <div class="profile-details">
+          <div class="detail-item">
+            <span class="detail-label">Address:</span>
+            <span class="detail-value">{{ selectedDriver.location?.address || 'Not available' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Coordinates:</span>
+            <span class="detail-value">
+              {{ selectedDriver.location?.latitude }}, {{ selectedDriver.location?.longitude }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Edit Driver Modal -->
+<app-modal 
+  [isOpen]="showEditModal"
+  [title]="'Edit Driver'"
+  [confirmText]="'Update Driver'"
+  [cancelText]="'Cancel'"
+  [size]="'lg'"
+  (close)="closeEditModal()"
+  (confirm)="updateDriver()"
+  (cancel)="closeEditModal()">
+  
+  <form [formGroup]="editDriverForm" class="modal-form" *ngIf="selectedDriver">
+    <div class="form-section">
+      <h4 class="section-title">Personal Information</h4>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input
+            type="text"
+            formControlName="name"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(editDriverForm, 'name')">
+          <div class="form-error" *ngIf="isFieldInvalid(editDriverForm, 'name')">
+            {{ getFieldError(editDriverForm, 'name') }}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input
+            type="email"
+            formControlName="email"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(editDriverForm, 'email')">
+          <div class="form-error" *ngIf="isFieldInvalid(editDriverForm, 'email')">
+            {{ getFieldError(editDriverForm, 'email') }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input
+            type="tel"
+            formControlName="phone"
+            class="form-control"
+            [class.is-invalid]="isFieldInvalid(editDriverForm, 'phone')">
+          <div class="form-error" *ngIf="isFieldInvalid(editDriverForm, 'phone')">
+            {{ getFieldError(editDriverForm, 'phone') }}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select formControlName="status" class="form-control form-select">
+            <option value="ACTIVE">Active</option>
+            <option value="BUSY">Busy</option>
+            <option value="OFFLINE">Offline</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="SUSPENDED">Suspended</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section" formGroupName="vehicle">
+      <h4 class="section-title">Vehicle Information</h4>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Vehicle Model</label>
+          <input
+            type="text"
+            formControlName="model"
+            class="form-control">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Plate Number</label>
+          <input
+            type="text"
+            formControlName="plateNumber"
+            class="form-control"
+            style="text-transform: uppercase;">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Year</label>
+          <input
+            type="number"
+            formControlName="year"
+            class="form-control"
+            [min]="1990"
+            [max]="currentYear">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <input
+            type="text"
+            formControlName="color"
+            class="form-control">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-section" formGroupName="location">
+      <h4 class="section-title">Location Information</h4>
+      
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input
+          type="text"
+          formControlName="address"
+          class="form-control">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Latitude</label>
+          <input
+            type="number"
+            formControlName="latitude"
+            class="form-control"
+            step="0.000001">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Longitude</label>
+          <input
+            type="number"
+            formControlName="longitude"
+            class="form-control"
+            step="0.000001">
+        </div>
+      </div>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Delete Driver Modal -->
+<app-modal 
+  [isOpen]="showDeleteModal"
+  [title]="'Delete Driver'"
+  [confirmText]="'Delete'"
+  [cancelText]="'Cancel'"
+  [confirmButtonClass]="'btn-danger'"
+  (close)="closeDeleteModal()"
+  (confirm)="deleteDriver()"
+  (cancel)="closeDeleteModal()">
+  
+  <div class="delete-confirmation" *ngIf="selectedDriver">
+    <div class="warning-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h4>Are you sure you want to delete this driver?</h4>
+    <p>
+      This will permanently delete <strong>{{ selectedDriver.name }}</strong> 
+      and all associated data including vehicle information and ride history. This action cannot be undone.
+    </p>
+    <div class="driver-summary">
+      <div class="summary-item">
+        <span>Email:</span> {{ selectedDriver.email }}
+      </div>
+      <div class="summary-item">
+        <span>Vehicle:</span> {{ selectedDriver.vehicle?.plateNumber }}
+      </div>
+      <div class="summary-item">
+        <span>Total Rides:</span> {{ selectedDriver.totalRides || 0 }}
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<!-- Location Modal -->
+<app-modal 
+  [isOpen]="showLocationModal"
+  [title]="'Driver Location'"
+  [confirmText]="'Close'"
+  [showFooter]="false"
+  [size]="'md'"
+  (close)="closeLocationModal()">
+  
+  <div *ngIf="selectedDriver" class="location-details">
+    <div class="location-header">
+      <div class="driver-avatar">
+        {{ selectedDriver.name.charAt(0).toUpperCase() }}
+      </div>
+      <div class="driver-name">{{ selectedDriver.name }}</div>
+      <div class="driver-status" [style.color]="getStatusColor(selectedDriver.status)">
+        {{ getStatusIcon(selectedDriver.status) }} {{ selectedDriver.status }}
+      </div>
+    </div>
+    
+    <div class="location-info">
+      <div class="location-item">
+        <div class="location-label">Current Address</div>
+        <div class="location-value">{{ selectedDriver.location?.address || 'Not available' }}</div>
+      </div>
+      
+      <div class="location-item">
+        <div class="location-label">Coordinates</div>
+        <div class="location-value coordinates">
+          <span>Lat: {{ selectedDriver.location?.latitude || 'N/A' }}</span>
+          <span>Lng: {{ selectedDriver.location?.longitude || 'N/A' }}</span>
+        </div>
+      </div>
+      
+      <div class="location-item">
+        <div class="location-label">Last Updated</div>
+        <div class="location-value">{{ formatDateTime(selectedDriver.updatedDate || '') }}</div>
+      </div>
+    </div>
+    
+    <!-- In a real app, you would integrate with Google Maps or similar -->
+    <div class="map-placeholder">
+      <div class="map-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+      <p>Map integration would be implemented here</p>
+    </div>
+  </div>
+</app-modal>
